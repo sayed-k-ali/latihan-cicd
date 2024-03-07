@@ -11,4 +11,9 @@ app.get("/hello", (req, res) => {
     res.sendStatus(200)
 })
 
+app.get('/sebutnamasaya', (req, res) => {
+    const nama = req.query.nama;
+    res.status(200).send(nama)
+})
+
 app.listen(process.env.PORT, () => logger.info(null, "Server run on port %d", process.env.PORT))

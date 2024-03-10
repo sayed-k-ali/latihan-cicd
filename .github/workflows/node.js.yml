@@ -21,28 +21,33 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm install --silent
+
+    - name: "Node.js Package installation"
+      run: npm install --silent
+
+    - name: 'Login to GitHub Container Registry'
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{github.actor}}
+        password: ${{secrets.GHCR_ACCESSTOKEN}}
+
+    - name: 'Build Inventory Image'
+      run: |
+        docker build . --tag ghcr.io/${{github.actor}}/latihan-cicd:latest
+        docker push ghcr.io/${{github.actor}}/latihan-cicd:latest
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v3
-      - name: Upload to VM
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.SSHHOST }}
-          username: ${{ secrets.SSHUSER }}
-          key: ${{ secrets.SSHKEY }}
-          port: ${{ secrets.SSHPORT }}
-          source: '.'
-          target: ./latihan-cicd/
-      - name: restart pm2 services
+      - name: Spin up container using new docker image
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSHHOST }}
@@ -50,5 +55,8 @@ jobs:
           key: ${{ secrets.SSHKEY }}
           port: ${{ secrets.SSHPORT }}
           script: |
-            pm2 restart all
+            echo ${{ secrets.GHCR_ACCESSTOKEN }} | docker login --username ${{ github.actor }} --password-stdin
+            docker pull ghcr.io/${{ github.actor }}/latihan-cicd:latest
+            docker container rm -f latihan-cicd
+            docker run -e PORT=3000 -p 3000:3000 -d --name latihan-cicd ghcr.io/latihan-cicd:latest
   

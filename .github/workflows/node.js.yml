@@ -58,5 +58,5 @@ jobs:
             echo ${{ secrets.GHCR_ACCESSTOKEN }} | docker login ghcr.io --username ${{ github.actor }} --password-stdin
             docker pull ghcr.io/${{ github.actor }}/latihan-cicd:latest
             docker container rm -f latihan-cicd
-            docker run -e PORT=3000 -p 3000:3000 -d --name latihan-cicd ghcr.io/latihan-cicd:latest
+            docker run -e PORT=3000 -p 3000:3000 -d --name latihan-cicd ghcr.io/${{github.actor}}/latihan-cicd:latest
   
